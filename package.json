@@ -1,0 +1,53 @@
+{
+  "name": "maki-distributor",
+  "author": {
+    "name": "Uni"
+  },
+  "description": "📦 Smart contract that distributes a balance of tokens according to a merkle root",
+  "version": "1.0.0",
+  "homepage": "https://makiswap.com",
+  "keywords": [
+    "makiswap",
+    "unilayer",
+    "erc20"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/makiswap-protocol/maki-airdrop"
+  },
+  "files": [
+    "build"
+  ],
+  "engines": {
+    "node": ">=10"
+  },
+  "scripts": {
+    "precompile": "rimraf ./build/",
+    "compile": "waffle",
+    "pretest": "yarn compile",
+    "test": "mocha",
+    
+    "generate:dev": "ts-node scripts/generate-merkle-root.ts --input scripts/claims/dev.json > scripts/results/dev.json",
+    "generate:prod": "ts-node scripts/generate-merkle-root.ts --input scripts/claims/prod.json > scripts/results/prod.json",
+    "verify:dev": "ts-node scripts/verify-merkle-root.ts --input scripts/results/dev.json",
+    "verify:prod": "ts-node scripts/verify-merkle-root.ts --input scripts/results/prod.json",
+       
+    "prepublishOnly": "yarn test"
+  },
+  "devDependencies": {
+    "@openzeppelin/contracts": "3.1.0",
+    "@types/chai": "^4.2.6",
+    "@types/mocha": "^5.2.7",
+    "axios": "^0.20.0",
+    "chai": "^4.2.0",
+    "commander": "^6.1.0",
+    "ethereum-waffle": "^3.0.0",
+    "ethereumjs-util": "^7.0.4",
+    "mocha": "^6.2.2",
+    "prettier": "^2.0.5",
+    "rimraf": "^3.0.0",
+    "solc": "0.6.11",
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.3"
+  }
+}
