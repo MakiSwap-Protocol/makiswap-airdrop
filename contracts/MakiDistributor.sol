@@ -18,7 +18,6 @@ contract MakiDistributor is IMakiDistributor {
     // Time-Variables
     uint256 public immutable startTime;
     uint256 public immutable endTime;
-    uint256 internal immutable secondsInaDay = 86400;
 
     constructor(address token_, bytes32 merkleRoot_, uint256 startTime_, uint256 endTime_) public {
         token = token_;
@@ -58,6 +57,7 @@ contract MakiDistributor is IMakiDistributor {
         emit Claimed(index, account, amount);
     }
 
+    // REMOVE ACCIDENTAL SENDS
     function collectDust(address _token, uint256 _amount) external {
       require(msg.sender == deployer, '!deployer');
       require(_token != token, '!token');
@@ -68,11 +68,13 @@ contract MakiDistributor is IMakiDistributor {
         }
     }
 
+    // COLLECT UNCLAIMED TOKENS
     function collectUnclaimed(uint256 amount) external{
       require(msg.sender == deployer, 'MakiDistributor: not deployer');
       require(IERC20(token).transfer(deployer, amount), 'MakiDistributor: collectUnclaimed failed.');
     }
 
+    // UPDATE DEV ADDRESS
     function dev(address _deployer) public {
         require(msg.sender == deployer, "dev: wut?");
         deployer = _deployer;
