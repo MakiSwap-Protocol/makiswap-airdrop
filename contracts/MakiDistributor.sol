@@ -2,19 +2,30 @@
 pragma solidity =0.6.11;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/cryptography/MerkleProof.sol";
 import "./interfaces/IMakiDistributor.sol";
 
 contract MakiDistributor is IMakiDistributor {
+    using SafeMath for uint256;
     address public immutable override token;
     bytes32 public immutable override merkleRoot;
+    address deployer;
 
     // This is a packed array of booleans.
     mapping(uint256 => uint256) private claimedBitMap;
 
-    constructor(address token_, bytes32 merkleRoot_) public {
+    // Time-Variables
+    uint256 public immutable startTime;
+    uint256 public immutable endTime;
+    uint256 internal immutable secondsInaDay = 86400;
+
+    constructor(address token_, bytes32 merkleRoot_, uint256 startTime_, uint256 endTime_) public {
         token = token_;
         merkleRoot = merkleRoot_;
+        deployer = msg.sender;
+        startTime = startTime_;
+        endTime = endTime_;
     }
 
     function isClaimed(uint256 index) public view override returns (bool) {
@@ -34,14 +45,37 @@ contract MakiDistributor is IMakiDistributor {
     function claim(uint256 index, address account, uint256 amount, bytes32[] calldata merkleProof) external override {
         require(!isClaimed(index), 'MakiDistributor: Drop already claimed.');
 
-        // Verify the merkle proof.
+        // VERIFY MERKLE ROOT
         bytes32 node = keccak256(abi.encodePacked(index, account, amount));
         require(MerkleProof.verify(merkleProof, merkleRoot, node), 'MakiDistributor: Invalid proof.');
 
-        // Mark it claimed and send the token.
-        _setClaimed(index);
-        require(IERC20(token).transfer(account, amount), 'MakiDistributor: Transfer failed.');
+        // CLAIM AND SEND
+        _setClaimed(index); // sets claimed
+        require(block.timestamp >= startTime, 'MakiDistributor: Too soon'); // blocks early claims
+        require(block.timestamp <= endTime, 'MakiDistributor: Too late'); // blocks late claims
+        require(IERC20(token).transfer(account, amount), 'MakiDistributor: Transfer failed.'); // transfers tokens
 
         emit Claimed(index, account, amount);
     }
+
+    function collectDust(address _token, uint256 _amount) external {
+      require(msg.sender == deployer, '!deployer');
+      require(_token != token, '!token');
+        if (_token == address(0)) { // token address(0) = ETH
+            payable(deployer).transfer(_amount);
+        } else {
+        IERC20(_token).transfer(deployer, _amount);
+        }
+    }
+
+    function collectUnclaimed(uint256 amount) external{
+      require(msg.sender == deployer, 'MakiDistributor: not deployer');
+      require(IERC20(token).transfer(deployer, amount), 'MakiDistributor: collectUnclaimed failed.');
+    }
+
+    function dev(address _deployer) public {
+        require(msg.sender == deployer, "dev: wut?");
+        deployer = _deployer;
+    }
+
 }

@@ -14,6 +14,8 @@ const overrides = {
 }
 
 const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000'
+const startTime = 1617704800
+const endTime = 1620548800
 
 describe('MakiDistributor', () => {
   const provider = new MockProvider({
@@ -34,28 +36,28 @@ describe('MakiDistributor', () => {
 
   describe('#token', () => {
     it('returns the token address', async () => {
-      const distributor = await deployContract(wallet0, Distributor, [token.address, ZERO_BYTES32], overrides)
+      const distributor = await deployContract(wallet0, Distributor, [token.address, ZERO_BYTES32, startTime, endTime], overrides)
       expect(await distributor.token()).to.eq(token.address)
     })
   })
 
   describe('#merkleRoot', () => {
     it('returns the zero merkle root', async () => {
-      const distributor = await deployContract(wallet0, Distributor, [token.address, ZERO_BYTES32], overrides)
+      const distributor = await deployContract(wallet0, Distributor, [token.address, ZERO_BYTES32, startTime, endTime], overrides)
       expect(await distributor.merkleRoot()).to.eq(ZERO_BYTES32)
     })
   })
 
   describe('#claim', () => {
     it('fails for empty proof', async () => {
-      const distributor = await deployContract(wallet0, Distributor, [token.address, ZERO_BYTES32], overrides)
+      const distributor = await deployContract(wallet0, Distributor, [token.address, ZERO_BYTES32, startTime, endTime], overrides)
       await expect(distributor.claim(0, wallet0.address, 10, [])).to.be.revertedWith(
         'MakiDistributor: Invalid proof.'
       )
     })
 
     it('fails for invalid index', async () => {
-      const distributor = await deployContract(wallet0, Distributor, [token.address, ZERO_BYTES32], overrides)
+      const distributor = await deployContract(wallet0, Distributor, [token.address, ZERO_BYTES32, startTime, endTime], overrides)
       await expect(distributor.claim(0, wallet0.address, 10, [])).to.be.revertedWith(
         'MakiDistributor: Invalid proof.'
       )
@@ -69,7 +71,7 @@ describe('MakiDistributor', () => {
           { account: wallet0.address, amount: BigNumber.from(100) },
           { account: wallet1.address, amount: BigNumber.from(101) },
         ])
-        distributor = await deployContract(wallet0, Distributor, [token.address, tree.getHexRoot()], overrides)
+        distributor = await deployContract(wallet0, Distributor, [token.address, tree.getHexRoot(), startTime, endTime], overrides)
         await token.setBalance(distributor.address, 201)
       })
 
@@ -176,7 +178,7 @@ describe('MakiDistributor', () => {
         const proof = tree.getProof(0, wallet0.address, BigNumber.from(100))
         const tx = await distributor.claim(0, wallet0.address, 100, proof, overrides)
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(78466)
+        expect(receipt.gasUsed).to.eq(78536)
       })
     })
     describe('larger tree', () => {
@@ -188,7 +190,7 @@ describe('MakiDistributor', () => {
             return { account: wallet.address, amount: BigNumber.from(ix + 1) }
           })
         )
-        distributor = await deployContract(wallet0, Distributor, [token.address, tree.getHexRoot()], overrides)
+        distributor = await deployContract(wallet0, Distributor, [token.address, tree.getHexRoot(), startTime, endTime], overrides)
         await token.setBalance(distributor.address, 201)
       })
 
@@ -210,7 +212,7 @@ describe('MakiDistributor', () => {
         const proof = tree.getProof(9, wallets[9].address, BigNumber.from(10))
         const tx = await distributor.claim(9, wallets[9].address, 10, proof, overrides)
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(80960)
+        expect(receipt.gasUsed).to.eq(81030)
       })
 
       it('gas second down about 15k', async () => {
@@ -229,7 +231,7 @@ describe('MakiDistributor', () => {
           overrides
         )
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(65940)
+        expect(receipt.gasUsed).to.eq(66010)
       })
     })
 
@@ -257,7 +259,7 @@ describe('MakiDistributor', () => {
       })
 
       beforeEach('deploy', async () => {
-        distributor = await deployContract(wallet0, Distributor, [token.address, tree.getHexRoot()], overrides)
+        distributor = await deployContract(wallet0, Distributor, [token.address, tree.getHexRoot(), startTime, endTime], overrides)
         await token.setBalance(distributor.address, constants.MaxUint256)
       })
 
@@ -265,13 +267,13 @@ describe('MakiDistributor', () => {
         const proof = tree.getProof(50000, wallet0.address, BigNumber.from(100))
         const tx = await distributor.claim(50000, wallet0.address, 100, proof, overrides)
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(91650)
+        expect(receipt.gasUsed).to.eq(91720)
       })
       it('gas deeper node', async () => {
         const proof = tree.getProof(90000, wallet0.address, BigNumber.from(100))
         const tx = await distributor.claim(90000, wallet0.address, 100, proof, overrides)
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(91586)
+        expect(receipt.gasUsed).to.eq(91656)
       })
       it('gas average random distribution', async () => {
         let total: BigNumber = BigNumber.from(0)
@@ -284,7 +286,7 @@ describe('MakiDistributor', () => {
           count++
         }
         const average = total.div(count)
-        expect(average).to.eq(77075)
+        expect(average).to.eq(77145)
       })
       // this is what we gas golfed by packing the bitmap
       it('gas average first 25', async () => {
@@ -298,7 +300,7 @@ describe('MakiDistributor', () => {
           count++
         }
         const average = total.div(count)
-        expect(average).to.eq(62824)
+        expect(average).to.eq(62894)
       })
 
       it('no double claims in random distribution', async () => {
@@ -330,7 +332,7 @@ describe('MakiDistributor', () => {
       })
       expect(tokenTotal).to.eq('0x02ee') // 750
       claims = innerClaims
-      distributor = await deployContract(wallet0, Distributor, [token.address, merkleRoot], overrides)
+      distributor = await deployContract(wallet0, Distributor, [token.address, merkleRoot, startTime, endTime], overrides)
       await token.setBalance(distributor.address, tokenTotal)
     })
 
