@@ -26,12 +26,11 @@
     "compile": "waffle",
     "pretest": "yarn compile",
     "test": "mocha",
-    
     "generate:dev": "ts-node scripts/generate-merkle-root.ts --input scripts/claims/dev.json > scripts/results/dev.json",
     "generate:prod": "ts-node scripts/generate-merkle-root.ts --input scripts/claims/prod.json > scripts/results/prod.json",
     "verify:dev": "ts-node scripts/verify-merkle-root.ts --input scripts/results/dev.json",
     "verify:prod": "ts-node scripts/verify-merkle-root.ts --input scripts/results/prod.json",
-       
+    "flat:merkle": "truffle-flattener contracts/MakiDistributor.sol > flats/MakiDistributor_flat.sol",
     "prepublishOnly": "yarn test"
   },
   "devDependencies": {
@@ -49,5 +48,8 @@
     "solc": "0.6.11",
     "ts-node": "^8.5.4",
     "typescript": "^3.7.3"
+  },
+  "dependencies": {
+    "truffle-flattener": "^1.5.0"
   }
 }
